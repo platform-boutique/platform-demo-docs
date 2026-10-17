@@ -100,6 +100,29 @@ Image signing and the Kyverno catalog are unchanged (`history/`). **Secrets are 
 
 ## 6. Next work - the maintainer's decisions, in order
 
+### 6.0 Lean profile: portal + SSO + Argo CD without the shop and monitoring (requested by the maintainer, not started)
+
+Goal: running everything (~6.5 GB) is inefficient; the portal, Dex and Argo CD should run alone (estimate ~3.5 GB: Cilium + SPIRE + Hubble ~1 GB, API server ~1.3 GB, Argo CD ~0.8 GB, Dex, Backstage and PostgreSQL ~0.7 GB; **not measured**).
+
+**What the portal needs, and what it does without the rest**
+
+| Needed | Without it |
+|---|---|
+| Cilium, CoreDNS rewrite, Gateway, the CA/TLS secrets, Dex, PostgreSQL, Argo CD (it deploys Dex and Backstage and is itself one of the three SSO apps) | not optional |
+| Kyverno + `dev-policies` | optional; then the Policies tab and page are empty/error, the admission rules are not in force |
+| Shop workloads (`platform-demo` namespace) | the portal, catalog, TechDocs and SSO work; the Kubernetes, Network, Policies and Releases tabs are empty ("not deployed"); the Argo CD cards have no Applications for the services |
+| Monitoring (`monitoring-local`, Grafana) | Grafana SSO is moot; the Grafana cards and the `/grafana/api` proxy error; `kind/sso-bootstrap.sh` **fails** waiting for `deploy/grafana` |
+
+**Plan** (all in `deploy/platform-demo-helm`, to be tested on a cluster):
+1. `PROFILE=portal` for `kind/up.sh` / `kind/local-source.sh`: in the **staged copy only**, empty `envs/dev/workloads.yaml` (`[]`), keep `platform-gateway`, `dex`, `backstage` in `envs/dev/addons.yaml`, and optionally drop `application-kyverno.yaml` and `application-policies.yaml` from `gitops/apps/` (the files in Git stay as they are; no second environment directory, because the ApplicationSets glob `envs/*/`).
+2. `up.sh`: the wait loop expects 20 Applications (`-ge 20`): derive the number from the staged `gitops/apps` and `envs` instead; do not create the `monitoring` namespace/secrets when Grafana is absent; skip the `platform-demo` namespace and DB secret for the lean profile.
+3. `kind/sso-bootstrap.sh`: skip the Grafana half when `deploy/grafana` does not exist (the Argo CD token is still created).
+4. Backstage: make the Grafana plugin and the `/grafana/api` proxy tolerant when Grafana is absent (disable `entity-card:grafana/*` in the overlay for the lean profile, or leave `GRAFANA_TOKEN` unset and accept the card errors); same for the cluster-dependent tabs if they should be hidden rather than empty.
+5. Check the **Argo CD and SSO side in the lean profile** (the maintainer called it "not good"): login through Dex, `maintainers` admin rights (`g, platform-boutique:maintainers, role:admin`), the `backstage` account token, applications visible in the UI, the Argo CD cards in the portal; plus the known weak points: Argo CD trusts the local CA through `SSL_CERT_DIR` (replaces the system roots for that process), `policy.default: role:readonly` lets every signed-in person read everything, `admin.enabled` is still true (the bootstrap needs the initial admin secret), the `argocd` app manages itself so a values change restarts the SSO configuration.
+6. Document the result in `kind/README.md`, the portal's *Run it locally* page and this handoff; measure real memory with `docker stats` and update the estimate.
+
+Until this is done, use `kind/down.sh` + a fresh `up.sh`, or scale the shop and the monitoring backends to 0 **and pause Argo CD's controller** first (Argo CD heals them otherwise).
+
 ### 6.1 Make the portal real
 Section 0.3. Then: Hubble UI has no authentication and is the one UI outside SSO (replace it with the Network view rather than wrapping it); a `maintainers` team and CODEOWNERS on it; a GitHub App instead of a PAT; software templates (scaffolder) once repositories can be created; a Home page if wanted; the Argo CD tab (crashes, see 9) once the plugin is fixed.
 
