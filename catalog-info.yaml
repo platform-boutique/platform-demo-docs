@@ -1,0 +1,17 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: platform-demo-docs
+  title: platform-demo-docs
+  description: "Master reference of the platform, the current handoff, and the history of earlier sessions."
+  annotations:
+    github.com/project-slug: platform-boutique/platform-demo-docs
+    backstage.io/techdocs-ref: dir:.
+  tags: [documentation]
+  links:
+    - { url: "https://github.com/platform-boutique/platform-demo-docs", title: "Repository", icon: github }
+spec:
+  type: documentation
+  lifecycle: experimental
+  owner: group:default/maintainers
+  system: developer-portal
