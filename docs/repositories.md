@@ -10,7 +10,8 @@ platform-demo/
                local folder = repo name without the `app-` prefix (apps/frontend is github.com/platform-boutique/app-frontend)
   deploy/      what runs where: platform-demo-helm (charts, envs/<env>/, gitops/, policies/, kind/)
   platform/    the machinery around the apps: shared CI/CD workflows, observability configs
-               (future: backstage/, synthetic tests, monitors/alerts, AI tooling)
+               platform-demo-backstage (the developer portal) and its two plugins
+               (platform-demo-backstage-plugin-hubble, -releases); future: synthetic tests, monitors/alerts, AI tooling
   infra/       cloud and cluster infrastructure (future: terraform/ for the platform cluster, crossplane/)
   docs/        platform-demo-docs: this master reference, the handoff, history
   platform-demo.code-workspace    multi-root VS Code workspace for all of the above

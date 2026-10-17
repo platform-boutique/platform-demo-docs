@@ -1,32 +1,38 @@
-site_name: platform-demo-docs
-site_description: Master reference of the platform-demo project.
+# TechDocs site (https://backstage.io/docs/features/techdocs/). Built by the portal's backend with mkdocs-techdocs-core;
+# the theme and extensions come from there, the look from docs/stylesheets/extra.css (shared by all repositories).
+site_name: "platform-demo-docs"
+site_description: "Master reference of the platform-demo project."
 repo_url: https://github.com/platform-boutique/platform-demo-docs
 edit_uri: edit/main/docs/
-nav:
-  - Overview: index.md
-  - System at a glance: system.md
-  - Architecture and request flows: architecture.md
-  - Service inventory: services.md
-  - Container images: images.md
-  - Service wiring: wiring.md
-  - Observability contract: observability.md
-  - Kubernetes translation guide: kubernetes.md
-  - Helm charts: helm.md
-  - Cross-cutting findings and gotchas: gotchas.md
-  - Local stack (docker compose): local-stack.md
-  - Repository map: repositories.md
-  - Next steps: next-steps.md
-  - CI/CD, branching and releases: cicd.md
-  - Handoff: handoff.md
-  - OTLP migration: otlp-migration.md
-  - 'History: argocd cilium': history/HANDOFF-previous-argocd-cilium.md
-  - 'History: ci and helm': history/HANDOFF-previous-ci-and-helm.md
-  - 'History: otlp ci': history/HANDOFF-previous-otlp-ci.md
+
+plugins:
+  - techdocs-core
+
 theme:
   name: material
   features:
     - navigation.sections
     - navigation.top
     - content.code.copy
-plugins:
-  - techdocs-core
+
+nav:
+  - "Overview": index.md
+  - "System at a glance": system.md
+  - "Architecture and request flows": architecture.md
+  - "Service inventory": services.md
+  - "Container images": images.md
+  - "Service wiring": wiring.md
+  - "Observability contract": observability.md
+  - "Kubernetes translation guide": kubernetes.md
+  - "Helm charts": helm.md
+  - "Cross-cutting findings and gotchas": gotchas.md
+  - "Local stack (docker compose)": local-stack.md
+  - "Repository map": repositories.md
+  - "Next steps": next-steps.md
+  - "CI/CD, branching and releases": cicd.md
+  - "Handoff": handoff.md
+  - "OTLP migration": otlp-migration.md
+  - "History: argocd cilium": history/HANDOFF-previous-argocd-cilium.md
+  - "History: ci and helm": history/HANDOFF-previous-ci-and-helm.md
+  - "History: kyverno org move": history/HANDOFF-previous-kyverno-org-move.md
+  - "History: otlp ci": history/HANDOFF-previous-otlp-ci.md
