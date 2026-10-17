@@ -1,27 +1,27 @@
-# Handoff - Kyverno done, ready for Backstage
+# Handoff - Kyverno done, repositories moved to the platform-boutique organisation, ready for Backstage
 
-Written 2026-10-17 (end of the fourth session). Older handoffs are in `history/`. Read this first, then `README.md` (master reference; §11 repository map and workspace layout, §12 next steps, §13 CI/CD, network and admission control), then the README of whatever you touch (for policies: `deploy/platform-demo-helm/policies/README.md`).
+Written 2026-10-17 (end of the fourth session, updated after the organisation move). Older handoffs are in `history/`. Read this first, then `README.md` (master reference; §11 repository map and workspace layout, §12 next steps, §13 CI/CD, network and admission control), then the README of whatever you touch (for policies: `deploy/platform-demo-helm/policies/README.md`).
 **The local cluster is destroyed** (on request). `deploy/platform-demo-helm/kind/up.sh` rebuilds everything in ~8-10 minutes.
 
-## 0. Do these first (things only the maintainer can do)
+## 0. Do these first
 
-1. **Merge the 12 open pull requests** (auto mode refused to merge on its own, so nothing below is on `main` yet):
-   - `platform-demo-helm` **#11** - Kyverno (all 7 checks green, incl. the new *Kyverno policy tests*). **This one matters**; until it is merged, `main` has no Kyverno and a fresh `kind/up.sh` builds the previous state.
-   - README-only PRs (absolute link to the Helm chart + a note on what Kyverno enforces): `ad-service` #13, `cart-service` #13, `checkout-service` #8, `currency-service` #19, `email-service` #11, `frontend` #7, `payment-service` #18, `product-catalog-service` #7, `recommendation-service` #9, `shipping-service` #6, `product-catalog-db` #6.
-   - `gh pr merge <n> -R mladenovskistefan111/<repo> --squash --subject "<title> (#<n>)"` (merged branches are deleted automatically by the repo setting).
-2. **Add the new required check** to `main` protection of `platform-demo-helm` once #11 is merged: `Kyverno policy tests` (use `platform/platform-demo-workflows/tools/protect-repo.sh platform-demo-helm '<json list of all required checks>'`, take the list from the last green PR with `tools/required-checks.sh platform-demo-helm 11` - it now includes the new job).
-3. **Rebuild from `main` and prove it** (this was only proven on the branch, see 7): `deploy/platform-demo-helm/kind/up.sh`, then `deploy/platform-demo-helm/policies/tests/live/adversarial.sh` (29 cases, must end `all cases passed`). Expect 18 Applications Synced/Healthy.
-4. **Docker Hub read-only token** (Account settings -> Personal access tokens -> *Read-only*), then `DOCKERHUB_USERNAME=... DOCKERHUB_TOKEN=... kind/up.sh` (or create Secret `kyverno/dockerhub-read`), set `verifyImages.pullSecret: dockerhub-read` in `envs/dev/values/policies.yaml` and delete the `verify-images: Audit` line there. Without it, signature verification only reports (anonymous pulls are limited to 100/hour/IP and a throttled lookup is a denial). See `policies/README.md`, "Docker Hub and signature verification".
-5. **Revoke the `gh` token** when done: https://github.com/settings/tokens (scopes `repo`, `workflow`, `read:org`).
-6. **"Project" for the repos.** Done locally: the checkout is grouped by function (section 2) and `platform-demo.code-workspace` opens it all. Not done, and why: (a) a GitHub *organization* cannot be created through the API, and moving the repos into one changes every repo path - the keyless signatures' identity (`github.com/mladenovskistefan111/<repo>/.github/workflows/...`), the Argo CD `repoURL`s, the Helm CI cosign regexp, every pinned workflow reference and the v1.0.0 tags would all need a migration; do it deliberately, not casually; (b) a GitHub *Project* (board) needs the `project` token scope (`gh auth refresh -s project`, interactive). Repos are grouped on GitHub with topics (`platform-demo`, `app`/`deploy`/`platform`/`docs`).
+Everything from the Kyverno session and the organisation move is **merged to `main`** (all PRs cleared, nothing open of ours).
+
+1. **Rebuild from `main` and prove it.** The Kyverno work and the org move were tested on a live cluster running the branch, and each repo's CI passes in the org, but a from-scratch `kind/up.sh` on `main` has not been run since: `deploy/platform-demo-helm/kind/up.sh`, then `deploy/platform-demo-helm/policies/tests/live/adversarial.sh` (29 cases, must end `all cases passed`). Expect 18 Applications Synced/Healthy; Argo CD now reads `https://github.com/platform-boutique/platform-demo-helm.git`.
+2. **Docker Hub read-only token** (Account settings -> Personal access tokens -> *Read-only*), then `DOCKERHUB_USERNAME=... DOCKERHUB_TOKEN=... kind/up.sh` (or create Secret `kyverno/dockerhub-read`), set `verifyImages.pullSecret: dockerhub-read` in `envs/dev/values/policies.yaml` and delete the `verify-images: Audit` line there. Until then signature verification only reports (anonymous pulls are limited and a throttled lookup is a denial). See `policies/README.md`.
+3. **Token hygiene.** `gh` uses a classic personal access token with `repo`, `workflow`, `admin:org`, `project` (created for the move, 7-day expiry). Delete it at https://github.com/settings/tokens when no longer needed, or at least drop `admin:org`/`project`.
+4. **Dependabot came back.** Transferring the repos reset Dependabot's stored "ignore this major version" choices: ~24 PRs appeared (Node 25, TypeScript 6, Go 1.27, Python 3.14, eclipse-temurin 24, `gradle/actions` 6, ...), most of them the toolchain majors that were deliberately rejected. **Do not merge them blindly.** Fix durably: add `ignore:` entries to each repo's `.github/dependabot.yml` (extend `platform-demo-workflows/tools/gen-guardrails.py`, which generates that file) and close the PRs. Safe ones can be merged after CI (e.g. `platform-demo-observability` Tempo 2.10.3 -> 2.10.8, `ad-service` minor/patch group if green).
+5. **First release under the org.** Not exercised yet: the signing identity of new images is `https://github.com/platform-boutique/platform-demo-workflows/.github/workflows/docker-promote.yaml@...`. `docker-promote` self-verifies with a regexp that accepts both owners, and the Helm CI gate and Kyverno accept both, so the first `vX.Y.Z` tag will tell. Staging images go to `ghcr.io/platform-boutique/...` (image jobs pass in the org, package listing was not checked).
+6. Optional organisation hygiene: a `maintainers` team and CODEOWNERS pointing at the team instead of `@mladenovskistefan111`; org-level rulesets; a GitHub App for Backstage (preferred over a PAT).
 
 ## 1. Where things stand
 
 | Area | State |
 |---|---|
-| Code | 15 repos under github.com/mladenovskistefan111 (10 services, `product-catalog-db`, `platform-demo-helm`, `platform-demo-observability`, `platform-demo-workflows`, **`platform-demo-docs`** - new, holds the docs that used to float outside Git). `main` everywhere except the 12 PRs in section 0 |
+| Code | **15 repos in the GitHub organisation `platform-boutique`** (10 services, `product-catalog-db`, `platform-demo-helm`, `platform-demo-observability`, `platform-demo-workflows`, `platform-demo-docs`). Old `github.com/mladenovskistefan111/<repo>` URLs redirect. Everything on `main` |
+| Organisation | `platform-boutique` (free plan): 2FA required, base permission none, members cannot create repos, you are the owner. Private Project board **#1 `platform-demo`** with all 15 repos linked (https://github.com/orgs/platform-boutique/projects/1). Repo topics group them (`app`, `deploy`, `platform`, `docs`) |
 | Releases | `v1.0.0` on the 10 services, helm, observability. Docker Hub has `:1.0.0`, `:latest`, `:sha-*` (signed, SBOM attested) |
-| Shared pipelines | `platform-demo-workflows` **v2.0.1**; every caller pins it by SHA. CI on pull requests only, release on `v*` tags / manual dispatch |
+| Shared pipelines | `platform-demo-workflows` **v2.0.2** (gitleaks CLI instead of the paid `gitleaks-action`); every caller pins it by SHA and calls it from `platform-boutique/`. CI on pull requests only, release on `v*` tags / manual dispatch |
 | Protection | `main` of all repos: PR + required checks, linear history, no force-push, enforced for admins; `v*` tags immutable; secret scanning + push protection; CODEOWNERS; Dependabot; gitleaks pre-commit hooks in every clone |
 | Delivery | Argo CD 3.5 with ApplicationSets (`gitops/apps`), env config in `envs/dev`; 18 Applications (12 workloads, gateway, monitoring-local, argocd, kyverno, dev-policies, root) |
 | Networking | Cilium 1.20.2, **kube-proxy-less** (`kubeProxyReplacement: true`, `kubeProxyMode: none`, no kube-proxy DaemonSet - verified), Gateway API, Hubble, SPIFFE/SPIRE mutual auth enforced |
@@ -50,7 +50,7 @@ Convention for new things: services -> `apps/`; anything that provisions clouds/
 
 ## 3. Access and conventions
 
-- `gh` is logged in as `mladenovskistefan111` (scopes `repo`, `workflow`, `read:org`; no `project` scope).
+- `gh` is logged in as `mladenovskistefan111` with a classic PAT (scopes `repo`, `workflow`, `admin:org`, `project`); the org is `platform-boutique`. The tools in `platform-demo-workflows/tools/` default to that owner (`OWNER=` overrides).
 - Squash merges only; commit trailer `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`, PR bodies end with the Claude Code line. `gh pr edit` is broken (GraphQL deprecation); use `gh api -X PATCH repos/<o>/<r>/pulls/<n> -f title=... -f body=...`.
 - **The permission classifier blocks** merging PRs, destructive git (remote branch deletion, history rewrites, force-push) and anything that weakens a scan, without the user's explicit permission rule. Ask first, or let the user merge.
 - User preferences: validate through the **remote pipeline**; wants things tested and fixed properly; READMEs kept truthful; asks to be questioned *before* long autonomous work (this session: questions first, plan, then green light).
@@ -60,14 +60,14 @@ Convention for new things: services -> `apps/`; anything that provisions clouds/
 ## 4. Architecture in one screen
 
 ```
-service repo --PR--> CI (workflows v2.0.1) --tag vX.Y.Z--> release.yaml --> Docker Hub (digest scanned, signed, SBOM)
+service repo --PR--> CI (workflows v2.0.2) --tag vX.Y.Z--> release.yaml --> Docker Hub (digest scanned, signed, SBOM)
                                                                               |  PR: image.digest in envs/<env>/values/<app>.yaml
 platform-demo-helm (main) <-- polled every 2 min -- Argo CD ApplicationSets --> cluster
    CI: lint, render, kubeconform, Trivy, cosign gate, KYVERNO POLICY TESTS        Cilium (policies + mutual auth, Gateway)
                                                                                  Kyverno (admission: identity, images, hardening, exposure)
 ```
 
-Image signing is classic cosign format (`sha256-<digest>.sig`); identity `https://github.com/mladenovskistefan111/platform-demo-workflows/.github/workflows/docker-promote.yaml@<ref>` (older images: per-repo `ci-main.yaml`). Kyverno and the Helm CI use the same regexp `^https://github.com/mladenovskistefan111/[a-z-]+/\.github/workflows/[a-z.-]+@.+$`. Secrets are never in Git (DB credentials from `up.sh`, TLS from `make-tls.sh`, optional Docker Hub read credential).
+Image signing is classic cosign format (`sha256-<digest>.sig`); identity `https://github.com/platform-boutique/platform-demo-workflows/.github/workflows/docker-promote.yaml@<ref>` (images signed before the move carry `mladenovskistefan111` instead; every verifier accepts both) (older images: per-repo `ci-main.yaml`). Kyverno and the Helm CI use the same regexp `^https://github.com/(mladenovskistefan111|platform-boutique)/[a-z-]+/\.github/workflows/[a-z.-]+@.+$`. Secrets are never in Git (DB credentials from `up.sh`, TLS from `make-tls.sh`, optional Docker Hub read credential).
 
 ## 5. Everyday procedures
 
@@ -105,7 +105,14 @@ Semantic-versioning automation (conventional-commit PR title check, release-plea
 ## 7. What was verified, and what was not
 
 Verified on a live kind cluster (running the branch `feat/kyverno`, 2026-10-17): 18 Applications Synced/Healthy; the shop works end to end through the Gateway; Kyverno uses ~250 MiB (admission ~107, background ~85, reports ~52); all 29 live admission cases pass (identity theft with default SA / other SA / unknown name / relabel, foreign registry, other Docker Hub repo, tag instead of digest, probes, writable rootfs, token, privileged, NodePort, LoadBalancer, foreign HTTPRoute, a non-admin editing CiliumNetworkPolicy, namespace Pod Security removal, exec/debug with and without break-glass); mutations (token off, seccomp, Backstage label) and LimitRange defaults applied; the baseline default-deny CNP regenerates in ~3 s when deleted; before the Docker Hub quota ran out: all 10 deployed images verify, an image without a valid signature is denied, the `product-catalog-db` exception admits only that image under its own label; `kyverno test` 49/49; the CI evaluation fails when a rendered manifest violates a policy (checked with a deliberately broken manifest).
-**Not verified:** a from-scratch `kind/up.sh` on `main` with Kyverno (the PRs were not merged; the cluster was destroyed afterwards on request). Section 0.3.
+**Not verified:** a from-scratch `kind/up.sh` on `main` with Kyverno and the organisation URLs (everything was merged afterwards; the cluster was destroyed on request). Section 0.1.
+
+## 7b. The organisation move (2026-10-17) - what happened and what was learned
+
+Order that worked: (1) merge every open PR; (2) test-transfer `platform-demo-docs`; (3) fix what broke **while the repos were still on the personal account**: the shared workflows used `gitleaks/gitleaks-action`, which needs a **paid `GITLEAKS_LICENSE` in organisation-owned repos** -> replaced in all six workflows by the open-source gitleaks CLI (8.30.1, checksum-pinned, same scan: PR commits, whole history on manual runs; verified it catches a planted token) and released as **v2.0.2**; the cosign self-check accepts both owners; (4) transfer `platform-demo-workflows`; (5) one PR per repo: callers -> `platform-boutique/...@v2.0.2`, README URLs, in the helm repo also the Argo CD `repoURL`s and the signature regexps (accept both owners); (6) transfer the other 13 with `tools/transfer-repo.sh`; (7) repoint local clones; (8) org settings + Project board; (9) verify: frontend CI in the org passes all jobs (shared workflows, gitleaks CLI, image build/stage).
+
+Survives a transfer: branch protection (incl. required checks), the `v*` tag ruleset, tags, topics, squash-only settings, Actions secrets (`DOCKERHUB_*` - nothing had to be re-entered), open PRs, old-URL redirects (web, git, `uses:`). Resets: **secret scanning + push protection** (re-enabled by the script; the settings take a few seconds to settle), **Dependabot's stored ignore choices** (section 0.4). Free-plan limits: the org cannot enforce "private-only repository creation" (API refuses); `members_can_create_repositories` is off.
+Not changed on purpose: chart `maintainers` and CODEOWNERS name the person `mladenovskistefan111`; Docker Hub stays `mladenovskistefan/*` (independent of GitHub); history files in `history/` keep the old owner.
 
 ## 8. Decisions taken (and why)
 
@@ -121,7 +128,8 @@ Verified on a live kind cluster (running the branch `feat/kyverno`, 2026-10-17):
 | `verify-images` audits in dev | Docker Hub anonymous rate limit; an error is a denial for an enforcing policy; fix = read-only token (0.4) |
 | `product-catalog-db` = temporary local-test image, unsigned, allow-listed | user's decision (RDS on AWS); Helm CI list + Kyverno exception, remove both together |
 | Backstage not part of the Kyverno job; Policy Reporter UI skipped | Backstage will show reports |
-| Workspace grouped by function; no GitHub organization yet | org move would break signing identity, Argo repoURLs, pins (0.6) |
+| Workspace grouped by function; repos moved to the `platform-boutique` org | org enables teams, org-level settings/Projects and Backstage's GitHub integration; done carefully (7b): signature identity accepts both owners, callers re-pinned |
+| gitleaks CLI instead of `gitleaks-action` | the Action's license is paid for organisations; same scan, free, checksum-pinned |
 | Cilium CNI + Gateway API, kube-proxy-free; enforced mutual auth (Beta, authenticates but does not encrypt); SPIRE server as root; cosign 3 with classic signatures | earlier sessions, see `history/` |
 
 ## 9. Gotchas worth remembering (policies: see `policies/README.md`)

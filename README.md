@@ -306,7 +306,7 @@ Profiles: Pyroscope SDK in every service except cart (Go SDK, `@pyroscope/nodejs
 | Pyroscope | profiles | `pyroscope:4040` |
 | Grafana | UI, datasources uids `mimir`, `loki`, `tempo`, `pyroscope` | `grafana:3000` |
 
-The pipeline is [`platform-demo-observability/alloy/config.otlp.alloy`](https://github.com/mladenovskistefan111/platform-demo-observability/blob/main/alloy/config.otlp.alloy): `otelcol.receiver.otlp` (gRPC) → `otelcol.processor.batch` →
+The pipeline is [`platform-demo-observability/alloy/config.otlp.alloy`](https://github.com/platform-boutique/platform-demo-observability/blob/main/alloy/config.otlp.alloy): `otelcol.receiver.otlp` (gRPC) → `otelcol.processor.batch` →
 traces: `otelcol.exporter.otlp` (Tempo) · metrics: `otelcol.exporter.prometheus` → `prometheus.remote_write` (Mimir) · logs: `otelcol.exporter.otlphttp` (Loki `/otlp`);
 `pyroscope.receive_http` → `pyroscope.write`; and `loki.source.docker` **only** for `product-catalog-db` and `cart-redis` (they cannot speak OTLP).
 
@@ -638,26 +638,26 @@ platform-demo/
 
 Convention for what is added later: a new service -> `apps/<name>` (+ a line in `deploy/.../envs/<env>/workloads.yaml`); anything that provisions clouds or clusters (Terraform, Crossplane compositions) -> `infra/<name>`; developer portal, test/monitoring/alerting code, AI tooling that serves the platform -> `platform/<name>`; environment state -> only `deploy/platform-demo-helm/envs/`. Repository names keep the `platform-demo-` prefix for non-service repos.
 
-### Repositories (all under github.com/mladenovskistefan111)
+### Repositories (all in the GitHub organisation `platform-boutique`; old `mladenovskistefan111/<repo>` URLs redirect)
 
 | Group | Repository | README | Contents |
 |---|---|---|---|
-| apps | [`frontend`](https://github.com/mladenovskistefan111/frontend) | [README](https://github.com/mladenovskistefan111/frontend#readme) | HTTP storefront (Go) |
-| apps | [`ad-service`](https://github.com/mladenovskistefan111/ad-service) | [README](https://github.com/mladenovskistefan111/ad-service#readme) | ads (Java) |
-| apps | [`cart-service`](https://github.com/mladenovskistefan111/cart-service) | [README](https://github.com/mladenovskistefan111/cart-service#readme) | carts on Redis (.NET) |
-| apps | [`checkout-service`](https://github.com/mladenovskistefan111/checkout-service) | [README](https://github.com/mladenovskistefan111/checkout-service#readme) | order orchestration (Go) |
-| apps | [`currency-service`](https://github.com/mladenovskistefan111/currency-service) | [README](https://github.com/mladenovskistefan111/currency-service#readme) | currency conversion (Node/TS) |
-| apps | [`email-service`](https://github.com/mladenovskistefan111/email-service) | [README](https://github.com/mladenovskistefan111/email-service#readme) | email stub (Python) |
-| apps | [`payment-service`](https://github.com/mladenovskistefan111/payment-service) | [README](https://github.com/mladenovskistefan111/payment-service#readme) | payment simulation (Node/TS) |
-| apps | [`product-catalog-service`](https://github.com/mladenovskistefan111/product-catalog-service) | [README](https://github.com/mladenovskistefan111/product-catalog-service#readme) | catalog API on Postgres (Go) |
-| apps | [`product-catalog-db`](https://github.com/mladenovskistefan111/product-catalog-db) | [README](https://github.com/mladenovskistefan111/product-catalog-db#readme) | Postgres image with schema + seed (temporary, local testing; RDS on AWS) |
-| apps | [`recommendation-service`](https://github.com/mladenovskistefan111/recommendation-service) | [README](https://github.com/mladenovskistefan111/recommendation-service#readme) | recommendations (Python) |
-| apps | [`shipping-service`](https://github.com/mladenovskistefan111/shipping-service) | [README](https://github.com/mladenovskistefan111/shipping-service#readme) | quotes + tracking IDs (Go) |
+| apps | [`frontend`](https://github.com/platform-boutique/frontend) | [README](https://github.com/platform-boutique/frontend#readme) | HTTP storefront (Go) |
+| apps | [`ad-service`](https://github.com/platform-boutique/ad-service) | [README](https://github.com/platform-boutique/ad-service#readme) | ads (Java) |
+| apps | [`cart-service`](https://github.com/platform-boutique/cart-service) | [README](https://github.com/platform-boutique/cart-service#readme) | carts on Redis (.NET) |
+| apps | [`checkout-service`](https://github.com/platform-boutique/checkout-service) | [README](https://github.com/platform-boutique/checkout-service#readme) | order orchestration (Go) |
+| apps | [`currency-service`](https://github.com/platform-boutique/currency-service) | [README](https://github.com/platform-boutique/currency-service#readme) | currency conversion (Node/TS) |
+| apps | [`email-service`](https://github.com/platform-boutique/email-service) | [README](https://github.com/platform-boutique/email-service#readme) | email stub (Python) |
+| apps | [`payment-service`](https://github.com/platform-boutique/payment-service) | [README](https://github.com/platform-boutique/payment-service#readme) | payment simulation (Node/TS) |
+| apps | [`product-catalog-service`](https://github.com/platform-boutique/product-catalog-service) | [README](https://github.com/platform-boutique/product-catalog-service#readme) | catalog API on Postgres (Go) |
+| apps | [`product-catalog-db`](https://github.com/platform-boutique/product-catalog-db) | [README](https://github.com/platform-boutique/product-catalog-db#readme) | Postgres image with schema + seed (temporary, local testing; RDS on AWS) |
+| apps | [`recommendation-service`](https://github.com/platform-boutique/recommendation-service) | [README](https://github.com/platform-boutique/recommendation-service#readme) | recommendations (Python) |
+| apps | [`shipping-service`](https://github.com/platform-boutique/shipping-service) | [README](https://github.com/platform-boutique/shipping-service#readme) | quotes + tracking IDs (Go) |
 | apps | `shopping-assistant-service` (local only, no repo) | local README | Gemini/AlloyDB assistant (dormant, GCP-only) |
-| deploy | [`platform-demo-helm`](https://github.com/mladenovskistefan111/platform-demo-helm) | [README](https://github.com/mladenovskistefan111/platform-demo-helm#readme) | Helm charts (library + 12 workloads + umbrella + Gateway + local monitoring), `envs/`, `gitops/` (Argo CD), `policies/` (Kyverno), `kind/` runbook |
-| platform | [`platform-demo-workflows`](https://github.com/mladenovskistefan111/platform-demo-workflows) | [README](https://github.com/mladenovskistefan111/platform-demo-workflows#readme) | reusable GitHub Actions workflows (Go, Node, Python, Java, .NET CI; Docker build/scan; Docker promote/sign; secret scan; workflow lint) and the generators/protection scripts in `tools/` |
-| platform | [`platform-demo-observability`](https://github.com/mladenovskistefan111/platform-demo-observability) | — | compose stack: Alloy, Mimir, Loki, Tempo, Pyroscope, Grafana + dashboards; `alloy/config.otlp.alloy` + `docker-compose.otlp.yaml` for the OTLP setup |
-| docs | [`platform-demo-docs`](https://github.com/mladenovskistefan111/platform-demo-docs) | this file | master reference, `HANDOFF.md`, `OTLP-MIGRATION-PLAN.md`, `history/` |
+| deploy | [`platform-demo-helm`](https://github.com/platform-boutique/platform-demo-helm) | [README](https://github.com/platform-boutique/platform-demo-helm#readme) | Helm charts (library + 12 workloads + umbrella + Gateway + local monitoring), `envs/`, `gitops/` (Argo CD), `policies/` (Kyverno), `kind/` runbook |
+| platform | [`platform-demo-workflows`](https://github.com/platform-boutique/platform-demo-workflows) | [README](https://github.com/platform-boutique/platform-demo-workflows#readme) | reusable GitHub Actions workflows (Go, Node, Python, Java, .NET CI; Docker build/scan; Docker promote/sign; secret scan; workflow lint) and the generators/protection scripts in `tools/` |
+| platform | [`platform-demo-observability`](https://github.com/platform-boutique/platform-demo-observability) | — | compose stack: Alloy, Mimir, Loki, Tempo, Pyroscope, Grafana + dashboards; `alloy/config.otlp.alloy` + `docker-compose.otlp.yaml` for the OTLP setup |
+| docs | [`platform-demo-docs`](https://github.com/platform-boutique/platform-demo-docs) | this file | master reference, `HANDOFF.md`, `OTLP-MIGRATION-PLAN.md`, `history/` |
 
 Each `*-service` repo has thin `.github/workflows/ci.yaml` and `release.yaml` callers of the shared workflows (§13) and a `tests/` (or `__tests__/`) folder. `tests/e2e` and `tests/integration` of cart, frontend and product-catalog target the removed kind-based job and are not run by CI.
 
@@ -685,7 +685,7 @@ To continue in a new chat, paste this file, `HANDOFF.md` and the README of what 
 
 **Model: trunk-based.** `main` is the trunk; work happens on short-lived `feat/*`, `fix/*`, `docs/*`, `chore/*` branches merged by **squash PR**. There is no production branch: a release is an annotated semver tag `vX.Y.Z` on `main`, and environments are values files in `platform-demo-helm` (promotion = a PR that bumps image digests).
 
-**Pipelines never run on push.** `ci.yaml` runs on `pull_request` (and manual dispatch); `release.yaml` runs on a `v*` tag or manual dispatch (`publish=true`). Both are thin callers of [`platform-demo-workflows`](https://github.com/mladenovskistefan111/platform-demo-workflows#readme) (currently **v2.0.1**), pinned by commit SHA (`# v2.0.1` comment), with explicit per-job `permissions:`.
+**Pipelines never run on push.** `ci.yaml` runs on `pull_request` (and manual dispatch); `release.yaml` runs on a `v*` tag or manual dispatch (`publish=true`). Both are thin callers of [`platform-demo-workflows`](https://github.com/platform-boutique/platform-demo-workflows#readme) (currently **v2.0.2**), pinned by commit SHA (`# v2.0.1` comment), with explicit per-job `permissions:`.
 
 | Stage | What happens |
 |---|---|
@@ -711,7 +711,7 @@ The kind cluster runs Cilium as CNI (kube-proxy replacement, Gateway API, Hubble
 
 ### Admission control (Kyverno)
 
-Kyverno 1.19 is deployed by Argo CD (`gitops/apps/application-kyverno.yaml`, project `security`) with the policies from `platform-demo-helm/policies/` (CEL policy types, per-environment values). **Enforced for `platform-demo`**, report-only for `monitoring` and `argocd`. Full catalog, rollout procedure, exceptions and break-glass: [`policies/README.md`](https://github.com/mladenovskistefan111/platform-demo-helm/blob/main/policies/README.md).
+Kyverno 1.19 is deployed by Argo CD (`gitops/apps/application-kyverno.yaml`, project `security`) with the policies from `platform-demo-helm/policies/` (CEL policy types, per-environment values). **Enforced for `platform-demo`**, report-only for `monitoring` and `argocd`. Full catalog, rollout procedure, exceptions and break-glass: [`policies/README.md`](https://github.com/platform-boutique/platform-demo-helm/blob/main/policies/README.md).
 
 | Concern | What is enforced |
 |---|---|
