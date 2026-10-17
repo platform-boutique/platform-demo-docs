@@ -1,0 +1,16 @@
+name: CI
+
+# Pull-request gate for the documentation repository: only the secret scan (nothing else to build). Nothing runs on a plain push.
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  secret-scan:
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: mladenovskistefan111/platform-demo-workflows/.github/workflows/secret-scan.yaml@f2a4c94316f81a91672ebe04906c8aa2c06c69e7 # v2.0.1
