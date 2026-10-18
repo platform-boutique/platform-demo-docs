@@ -6,6 +6,7 @@ metadata:
   description: "Master reference of the platform, the current handoff, and the history of earlier sessions."
   annotations:
     github.com/project-slug: platform-boutique/platform-demo-docs
+    backstage.io/source-location: url:https://github.com/platform-boutique/platform-demo-docs/tree/main/
     backstage.io/techdocs-ref: dir:.
   tags: [documentation]
   links:
