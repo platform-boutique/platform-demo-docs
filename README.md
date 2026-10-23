@@ -631,7 +631,8 @@ platform-demo/
                local folder = repo name without the `app-` prefix (apps/frontend is github.com/platform-boutique/app-frontend)
   deploy/      what runs where: platform-demo-helm (charts, envs/<env>/, gitops/, policies/, kind/)
   platform/    the machinery around the apps: shared CI/CD workflows, observability configs
-               (future: backstage/, synthetic tests, monitors/alerts, AI tooling)
+               platform-demo-backstage (the developer portal) and its two plugins
+               (platform-demo-backstage-plugin-hubble, -releases); future: synthetic tests, monitors/alerts, AI tooling
   infra/       cloud and cluster infrastructure (future: terraform/ for the platform cluster, crossplane/)
   docs/        platform-demo-docs: this master reference, the handoff, history
   platform-demo.code-workspace    multi-root VS Code workspace for all of the above
@@ -670,7 +671,7 @@ All gRPC APIs share protobuf package `hipstershop` (the Online Boutique heritage
 
 Priority order; details, decisions and context are in [`HANDOFF.md`](HANDOFF.md). Kyverno (admission control, §13) is done.
 
-1. **Backstage** as the single pane of glass (decided, not started): software catalog from `catalog-info.yaml` per repo, Kubernetes + Argo CD + Kyverno policy-report + Grafana plugins, custom plugins where none exists (Hubble, Cilium, release/promotion views). The pods already carry `backstage.io/kubernetes-id` (Kyverno mutation).
+1. **Make the developer portal real.** Backstage (catalog from `catalog-info.yaml` per repo, TechDocs, Kubernetes + Argo CD + Kyverno + Grafana plugins, own Hubble and Releases plugins) and single sign-on through **Dex** are built and were tested on the local cluster, but exist only on local branches (nothing pushed). Remaining: create the three new repositories and push, the GitHub OAuth App and a `maintainers` team, catalog discovery from GitHub, the portal's first release, TechDocs publishing in CI; see [`HANDOFF.md`](HANDOFF.md) §0 and the portal's own documentation (`platform-demo-backstage/docs`, rendered in the portal).
 2. Infrastructure as code for the platform cluster: **Terraform** (cluster, networking, state) and **Crossplane** (self-service infrastructure), under `infra/`; on AWS: RDS instead of `product-catalog-db`, cert-manager + ingress/TLS, External Secrets, SPIRE storage on EBS, Cilium installed by the cluster pipeline, a registry without anonymous pull limits (ECR pull-through) so image-signature verification can be enforced.
 3. Observability depth: synthetic tests, monitors and alerts (SLOs per service, alert rules in Mimir/Grafana), Hubble metrics into Mimir (to retire the Hubble UI/relay pods), policy-report metrics from Kyverno.
 4. Semantic-versioning automation and enforcement (§13): conventional-commit PR titles as a required check, release-please opening release PRs, strict `vX.Y.Z` tag filter; automated digest-promotion PRs and a second environment (`envs/prod`).
