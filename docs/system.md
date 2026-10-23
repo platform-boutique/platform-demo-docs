@@ -10,7 +10,6 @@
 | External protocol | HTTP/1.1 from `frontend` only; the browser speaks HTTPS to the load balancer |
 | Languages | Go (frontend, checkout, product-catalog, shipping), Java 21 (ad), C#/.NET 10 (cart), TypeScript/Node 22 (currency, payment), Python 3.12 (email, recommendation) |
 | Registry | Docker Hub, `mladenovskistefan/<service>`, signed (cosign), pinned by digest in the charts |
-| Optional / dormant | `shopping-assistant-service` (Python, GCP-only, not wired in) |
 | Telemetry | Services **push** traces + metrics + logs over **OTLP/gRPC** to Alloy → Tempo / Mimir / Loki; profiles go to Alloy → Pyroscope. Grafana on top. That stack exists in docker compose only ([local stack](local-stack.md)) |
 
 Services are stateless except the two data stores. Only `frontend` needs to be reachable from outside the cluster.

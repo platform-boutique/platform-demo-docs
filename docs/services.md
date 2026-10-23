@@ -18,7 +18,6 @@ Ten application services plus their two stateful dependencies. All of them are d
 | shipping-service | `shipping-service` | Go 1.25 | **50051** gRPC | — (debug `/metrics` + pprof 9090) | Deployment | no | **root (UID 0)** | **amd64 only** |
 | product-catalog-db | `product-catalog-db` | PostgreSQL 17 | **5432** | — | **StatefulSet** (1 replica) | **yes**, PVC (gp3 on EKS) | `postgres` UID/GID **999** | image arch |
 | cart-redis | (no repo; `redis:7-alpine`) | Redis 7 | **6379** | — | **StatefulSet** (1 replica) | yes (cache; PVC optional) | `redis` (image default) | image arch |
-| shopping-assistant-service | `shopping-assistant-service` | Python 3.14 / Flask | 8080 HTTP | none | — (**not deployed**, local folder only, no repository) | no | root | — |
 
 Port collisions are harmless in Kubernetes (separate pods/Services): `8080` is used by frontend, email and recommendation; `50051` by shipping and payment. Since the OTLP migration only the Go services still serve a (debug-only) Prometheus `/metrics`; nothing scrapes it.
 

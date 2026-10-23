@@ -48,7 +48,6 @@ The telemetry variables are separate (contract in [Observability](observability.
 | Credit-card data in transit | `frontend` → `checkout` → `payment` | test cards only; **payment logs the full request** | redact in code before real use. Network policy plus mutual authentication and WireGuard protect the path, not the log |
 | Backstage database password | the portal | not applicable | generated and rotated (every 7 days) by RDS in Secrets Manager, read by External Secrets; Reloader restarts Backstage when it changes. It never reaches Git or Terraform state |
 | Sign-in secrets (GitHub OAuth App, Dex client secrets, session secret), Docker Hub read token (Kyverno) | Dex, Argo CD, Backstage, Kyverno | not applicable | Parameter Store `SecureString` parameters under `/platform-demo/`, typed once by a person or generated; table in the infra repository's [Secrets](https://github.com/platform-boutique/infra-terraform/blob/main/docs/secrets.md) and the Helm repository's [`docs/secrets.md`](https://github.com/platform-boutique/platform-demo-helm/blob/main/docs/secrets.md) |
-| Google credentials / API key | `shopping-assistant-service` | not deployed | not deployed |
 
 The shop has no other credentials. The services' own gRPC is unauthenticated and unencrypted. In compose that is the whole story; on the cluster the network adds SPIFFE mutual authentication between workloads and WireGuard between nodes (designed and merged, **not yet verified on a live cluster**).
 

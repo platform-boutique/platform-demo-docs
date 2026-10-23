@@ -17,7 +17,7 @@ The AWS platform (Terraform for the network, EKS, Cilium with SPIRE and WireGuar
    - A registry without anonymous pull limits (ECR pull-through) so signature verification does not depend on a Docker Hub token; network policies for the remaining namespaces.
 9. **Re-pin the ten services to workflows v3.0.3** (Trivy v0.76.1), by Dependabot or one re-pin PR per repository; and bump Argo CD to the current chart in Terraform **and** Git together.
 10. **Option: Bottlerocket nodes.** A smaller attack surface, but gVisor is installed by a boot script on Amazon Linux 2023 and would not be available.
-11. **Housekeeping.** Remove the Grafana links from the service catalog entries until a Grafana is deployed on the cluster, and decide on the dormant `shopping-assistant-service` (Google AlloyDB and Gemini only; not deployed).
+11. **Housekeeping.** Remove the Grafana links from the service catalog entries until a Grafana is deployed on the cluster,.
 12. **Later.** Software templates (scaffolder) in the portal, synthetic tests, monitors and alerts (SLOs per service), semantic-versioning automation (conventional-commit PR titles, release-please), Crossplane for self-service infrastructure, AI tooling on top of the platform.
 
 ---
