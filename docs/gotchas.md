@@ -24,9 +24,8 @@ Two lists: how the **application** behaves (the things that bite when you deploy
 18. **pprof exposure:** shipping always serves `/debug/pprof` on its (unexposed) debug port; checkout/product-catalog when `ENABLE_PROFILING=1`. The charts do not expose these ports.
 19. **`shipping.ShipOrder` crashes the process on a nil address** (no recovery interceptor) — latent, only `checkout` calls it with a validated address.
 20. **`ad-service` returns *all* ads per matched category**; `ENV_PLATFORM` isn't read; `checkout` does not require downstreams at boot; cart logs aren't JSON by default.
-21. **`shopping-assistant-service`** is GCP-only, unwired, no health endpoint/telemetry — excluded from the charts, not a Git repository.
-22. **Pyroscope Java agent needs an executable `/tmp`**; a `noexec` tmpfs makes `ad-service` crash at startup (an `emptyDir` is fine).
-23. **Idle telemetry noise on EKS:** with no collector in the cluster, every service logs OTLP exporter errors. Harmless, but do not mistake it for a fault.
+21. **Pyroscope Java agent needs an executable `/tmp`**; a `noexec` tmpfs makes `ad-service` crash at startup (an `emptyDir` is fine).
+22. **Idle telemetry noise on EKS:** with no collector in the cluster, every service logs OTLP exporter errors. Harmless, but do not mistake it for a fault.
 
 ## Admission control (Kyverno)
 
