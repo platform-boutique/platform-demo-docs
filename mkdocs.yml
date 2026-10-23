@@ -17,12 +17,7 @@ nav:
   - Repository map: repositories.md
   - Next steps: next-steps.md
   - CI/CD, branching and releases: cicd.md
-  - Handoff: handoff.md
   - OTLP migration: otlp-migration.md
-  - 'History: argocd cilium': history/HANDOFF-previous-argocd-cilium.md
-  - 'History: ci and helm': history/HANDOFF-previous-ci-and-helm.md
-  - 'History: kyverno org move': history/HANDOFF-previous-kyverno-org-move.md
-  - 'History: otlp ci': history/HANDOFF-previous-otlp-ci.md
 theme:
   name: material
   features:

@@ -1,8 +1,41 @@
 # Architecture and request flows
 
+## Where it runs
+
+The target is AWS EKS. Terraform owns every AWS resource; Kubernetes creates none (no Service of type `LoadBalancer`, no Ingress). Design and reasons are in the infra repository: [Architecture](https://github.com/platform-boutique/infra-terraform/blob/main/docs/architecture.md) and [The ALB and the Gateway](https://github.com/platform-boutique/infra-terraform/blob/main/docs/alb-and-gateway.md).
+
 ```mermaid
 flowchart LR
-    U([Browser]) -->|HTTP :8080| FE[frontend]
+    U([Browser]) -->|HTTPS :443| ALB[ALB<br/>TLS ends here<br/>ACM certificate]
+    ALB -->|HTTP :8080| GW[Cilium Gateway<br/>Envoy, host network<br/>on every node]
+    GW -->|host-based routes| FE[shop: frontend]
+    GW --> UIS[argocd / backstage / dex / hubble]
+    subgraph VPC [VPC, 2 zones, nodes in private subnets, Spot]
+      GW
+      FE
+      UIS
+      RDS[(RDS PostgreSQL<br/>Multi-AZ)]
+    end
+    UIS -.->|Backstage| RDS
+```
+
+- **Entry.** `shop.`, `argocd.`, `backstage.`, `dex.` and `hubble.platform-demo.click` are alias records pointing at the ALB. The ALB targets the *nodes* (pod addresses are not routable in the VPC) on port 8080; the Gateway selects the backend by host name. Port 80 only redirects to 443. The ALB admits only an address allow-list, so every UI is private to those addresses.
+- **Between pods.** Cilium (overlay, no kube-proxy) enforces default-deny network policy. Between shop workloads every allowed rule additionally requires **SPIFFE/SPIRE mutual authentication**; **WireGuard** encrypts traffic between nodes. The Gateway is the one thing never asked to authenticate (it has no SPIFFE identity).
+- **Pod isolation.** The shop, Backstage and Dex run in gVisor (`runtimeClassName: gvisor`, applied by a Kyverno mutation from a namespace label). Argo CD, Kyverno, External Secrets and other host-network or system components do not.
+- **Data.** Backstage keeps its catalog in a Multi-AZ RDS (TLS forced, reachable only from the nodes' security group, master password generated and rotated by RDS). The shop's PostgreSQL and Redis are StatefulSets on `gp3` EBS volumes.
+- **Deployment.** Terraform installs Cilium, the nodes, the `gp3` StorageClass and Argo CD with a root Application. From there Git (`platform-demo-helm`) is the only source of truth; see [Helm charts](helm.md#88-the-eks-platform-argo-cd-layers).
+- **No monitoring stack** runs on the cluster for now, so the OTLP target below does not exist there.
+
+!!! warning "Status"
+    All of this is merged but **has not been deployed yet**. Known first-deploy risks (WireGuard on the node kernel, the SPIRE start order, gVisor with Cilium, Argo CD adopting its own release) are listed in the owning repositories: [infra-terraform architecture](https://github.com/platform-boutique/infra-terraform/blob/main/docs/architecture.md#risks-of-the-first-deploy-with-these-settings) and the "Mutual authentication" and gVisor sections of [`gitops/README.md`](https://github.com/platform-boutique/platform-demo-helm/blob/main/gitops/README.md).
+
+## How the services talk
+
+The service graph is the same everywhere (compose and cluster). The observability box exists only in the docker compose stack.
+
+```mermaid
+flowchart LR
+    U([Browser]) -->|HTTP :8080 in compose<br/>via the Gateway on EKS| FE[frontend]
 
     FE -->|gRPC :3550| PC[product-catalog-service]
     FE -->|gRPC :7000| CUR[currency-service]
@@ -23,7 +56,7 @@ flowchart LR
     PC -->|SQL :5432| DB[(product-catalog-db<br/>PostgreSQL)]
     CART -->|RESP :6379| RDS[(cart-redis<br/>Redis)]
 
-    subgraph Observability
+    subgraph Observability [Observability: docker compose only]
       ALLOY[Alloy] --> MIMIR[Mimir]
       ALLOY --> LOKI[Loki]
       ALLOY --> TEMPO[Tempo]

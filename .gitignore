@@ -1,1 +1,5 @@
 .DS_Store
+
+# Session handoffs are working notes, not documentation: keep them out of Git (durable knowledge belongs in README.md and docs/).
+HANDOFF*.md
+history/

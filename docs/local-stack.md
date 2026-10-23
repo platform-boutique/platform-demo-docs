@@ -1,5 +1,7 @@
 # Local stack (docker compose)
 
+The only way to run the shop on a laptop is docker compose; there is no local Kubernetes environment. The cluster is AWS EKS ([Architecture](architecture.md)), and the observability stack (Alloy, Mimir, Loki, Tempo, Pyroscope, Grafana) exists **only here** for now. The files live in the [`platform-demo-observability`](https://github.com/platform-boutique/platform-demo-observability) repository, whose own docs ([running the stack](https://github.com/platform-boutique/platform-demo-observability/blob/main/docs/running.md), dashboards) are the owner of the details.
+
 `platform-demo-observability/docker-compose.yaml` runs the whole thing plus the LGTM stack on one bridge network (`observability`), with service-name DNS.
 
 ```bash
@@ -12,7 +14,7 @@ docker compose -f docker-compose.yaml -f docker-compose.otlp.yaml up -d
 # docker compose up -d
 
 docker compose ps
-open http://localhost        # frontend (host 80 → 8080)
+open http://localhost        # frontend (host 80 → 8080; plain HTTP is fine on localhost)
 open http://localhost:3000   # Grafana (anonymous admin)
 ```
 
@@ -32,6 +34,6 @@ Host port map (OTLP overlay; the original file additionally publishes the old me
 | Mimir | 9009 | | Loki | 3100 |
 | Tempo | 3200, 4319→4317 | | Pyroscope | 4040 |
 
-Environment per service in that file is the reference for the minimum viable config of each container (§5.2, §6.1). Volumes: `grafana_data`, `mimir_data`, `loki_data`, `tempo_data`, `pyroscope_data`, `postgres_data`, `redis_data`.
+Environment per service in that file is the reference for the minimum viable config of each container (§5.2, §6.1). The compose stack has no TLS, no network policy and no admission control: it shows that the services work, not that the platform around them does. Volumes: `grafana_data`, `mimir_data`, `loki_data`, `tempo_data`, `pyroscope_data`, `postgres_data`, `redis_data`.
 
 ---
