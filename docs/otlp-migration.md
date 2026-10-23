@@ -1,12 +1,12 @@
 # OTLP/gRPC migration — plan and result
 
-**Status: done and verified.** Every service pushes **traces, metrics and logs over OTLP/gRPC** to Alloy, and **profiles** to Alloy's Pyroscope receiver. After this, each Helm chart needs one monitoring value.
+**Status: done and verified in the docker compose stack.** Every service pushes **traces, metrics and logs over OTLP/gRPC** to Alloy, and **profiles** to Alloy's Pyroscope receiver. Each Helm chart needs one monitoring value. On the EKS cluster there is currently no Alloy to receive any of it ([Observability contract](observability.md)).
 
 ## Target contract (identical for all 10 services)
 
 | Env var | Value | Meaning |
 |---|---|---|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://alloy:4317` | gRPC endpoint (standard var; telemetry is on iff set). Legacy `COLLECTOR_SERVICE_ADDR` (`host:port`) still works as a fallback |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://alloy:4317` (compose; `http://alloy.monitoring.svc.cluster.local:4317` in the charts) | gRPC endpoint (standard var; telemetry is on iff set). Legacy `COLLECTOR_SERVICE_ADDR` (`host:port`) still works as a fallback |
 | `OTEL_SERVICE_NAME` | `<service>` | unchanged; dashboards depend on it |
 | `OTEL_METRIC_EXPORT_INTERVAL` | `15000` (ms) | new, optional |
 | `PYROSCOPE_ADDR` | `http://alloy:4040` | Alloy `pyroscope.receive_http` → Pyroscope |
@@ -49,13 +49,12 @@ Existing unit tests were kept and re-run: currency 18, payment 20, email 37, rec
 3. Checked per service: series in Mimir (`job`, `instance`), logs in Loki (`service_name`, `trace_id`), traces in Tempo (all ten services), profiles in Pyroscope (all but cart).
 4. All 198 dashboard queries executed against the stack: 186 return data; the 12 empty ones are error-rate / status-code panels (no errors occurred).
 5. The compose overlay in the observability repo was started separately and checked the same way.
-6. The same images ran in a kind cluster through the Helm charts (see `platform-demo-helm/README.md`).
+6. The same images later ran through the Helm charts on a former local cluster with a single-replica monitoring stack (since removed); that is not a verification of the EKS cluster.
 
-## Things you need to do
+## State of the images
 
-- **Push the images.** _Done (2026-10-17):_ `CI - Main` built and pushed them to Docker Hub (signed, with SBOM), their digests are pinned in the charts, and `v1.0.0` publishes `:1.0.0` for each service. The local `:1.1.0` tags were never pushed and do not exist on Docker Hub.
-- The old compose file still pins the **pre-OTLP** digests and keeps working with `config.alloy`; use the overlay for the new setup.
-- Nothing was committed to any git repository.
+- The images were built by each repository's pipeline, signed, with SBOM, and `v1.0.0` (2026-10-17) publishes `:1.0.0` for each service; their digests are pinned in `platform-demo-helm/envs/dev` ([Container images](images.md)). The local `:1.1.0` tags used during development were never pushed and do not exist on Docker Hub.
+- The original compose file in the observability repository still pins the **pre-OTLP** digests and keeps working with `config.alloy`; use the overlay for the new setup ([Local stack](local-stack.md)).
 
 ## Known follow-ups (not done)
 

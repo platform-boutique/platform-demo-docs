@@ -1,7 +1,8 @@
 # Observability contract
 
-All ten services now push **traces, metrics and logs over OTLP/gRPC** to Alloy and send **profiles** to Alloy's Pyroscope receiver. Nothing is scraped, and application containers are no
-longer collected from stdout (`kubectl logs` still works — stdout output was kept). What changed and why is in [`OTLP-MIGRATION-PLAN.md`](https://github.com/platform-boutique/platform-demo-docs/blob/main/OTLP-MIGRATION-PLAN.md).
+> **Status: there is no monitoring stack on the EKS cluster.** The contract below is unchanged and the ten services still export to `alloy.monitoring.svc.cluster.local`, but no `monitoring` namespace and no Alloy exist there, so the exporters fail quietly (log noise, the services keep serving). The working stack is the docker compose project in [`platform-demo-observability`](https://github.com/platform-boutique/platform-demo-observability) ([Local stack](local-stack.md)). Putting a collector and backends on the cluster, or switching OTLP export off, is on the [backlog](next-steps.md).
+
+All ten services push **traces, metrics and logs over OTLP/gRPC** to Alloy and send **profiles** to Alloy's Pyroscope receiver. Nothing is scraped, and application containers are no longer collected from stdout (`kubectl logs` still works: stdout output was kept). What changed and why is in [OTLP migration](otlp-migration.md).
 
 > Profiles cannot use OTLP: the Pyroscope SDKs push their own HTTP protocol. They are sent to Alloy (`pyroscope.receive_http` on `:4040`), which forwards to Pyroscope, so applications still only know one host.
 
@@ -18,7 +19,7 @@ longer collected from stdout (`kubectl logs` still works — stdout output was k
 
 `service.instance.id` is set in code from the pod hostname (`HOSTNAME`), and becomes the Prometheus `instance` label. It is mandatory: without it two replicas export identical series and overwrite each other.
 
-Telemetry is on iff an endpoint is available (Go services: no endpoint = off; `ENABLE_TRACING=0` forces it off). With the collector down, services keep serving and only log exporter errors — verified.
+Telemetry is on iff an endpoint is available (Go services: no endpoint = off; `ENABLE_TRACING=0` forces it off). With the collector down, services keep serving and only log exporter errors (verified in the compose stack; this is also the situation on EKS today).
 
 ### 6.2 How each stack implements it
 
@@ -40,7 +41,7 @@ Profiles: Pyroscope SDK in every service except cart (Go SDK, `@pyroscope/nodejs
   - ad, email, recommendation, **currency\***, **payment\***: `rpc_server_duration_seconds_{bucket,count,sum}`, `rpc_server_requests_total`, `rpc_server_active_requests` (\*Node services gained the `_seconds` suffix; dashboards updated)
   - **cart\***: `http_server_request_duration_seconds_*` (label `http_route="/hipstershop.CartService/<Method>"`), `http_server_active_requests`, `dotnet_*`, `kestrel_*` (dashboard rewritten)
   - frontend: `http_requests_total`, `http_request_duration_seconds_*`, `http_requests_in_flight` — unchanged
-- Verified: all 198 dashboard queries were run against the live test stack — 186 return data; the other 12 are error-rate / status-code panels that are empty simply because no errors occurred.
+- Verified against the compose test stack: all 198 dashboard queries were run — 186 return data; the other 12 are error-rate / status-code panels that are empty simply because no errors occurred.
 
 ### 6.4 Backends and the Alloy pipeline
 
@@ -57,9 +58,12 @@ The pipeline is [`platform-demo-observability/alloy/config.otlp.alloy`](https://
 traces: `otelcol.exporter.otlp` (Tempo) · metrics: `otelcol.exporter.prometheus` → `prometheus.remote_write` (Mimir) · logs: `otelcol.exporter.otlphttp` (Loki `/otlp`);
 `pyroscope.receive_http` → `pyroscope.write`; and `loki.source.docker` **only** for `product-catalog-db` and `cart-redis` (they cannot speak OTLP).
 
-### 6.5 Kubernetes notes for Alloy
+### 6.5 What a stack on the cluster needs
 
-- The Alloy `Service` must expose `4317` (OTLP/gRPC) and `4040` (Pyroscope). The charts' NetworkPolicies allow egress to exactly those ports in the namespace `global.monitoring.namespace` (default `monitoring`).
-- Re-point the exporters in `config.otlp.alloy` at the in-cluster Mimir/Loki/Tempo/Pyroscope Services of whichever monitoring charts you install (`monitoring/` holds vendored upstream charts).
-- Collect the two non-OTLP workloads from pod logs, e.g. with `discovery.kubernetes` + `discovery.relabel` keeping pods whose label `app.kubernetes.io/component` is `database` or `cache` (the charts set it), feeding `loki.source.kubernetes` and setting `service_name` from the pod label `app.kubernetes.io/name`. This is implemented and was exercised end to end in `platform-demo-helm/monitoring-local` (single-replica Alloy with Kubernetes pod discovery tailing the database and cache logs); see §8.8.
-- Both new rules need nothing else from the cluster: no scrape annotations, no `ServiceMonitor`.
+Not built; this is the checklist for when it is.
+
+- A namespace named by `global.monitoring.namespace` (default `monitoring`), declared in `envs/dev/values/cluster-bootstrap.yaml` like every namespace, with an Alloy `Service` that exposes `4317` (OTLP/gRPC) and `4040` (Pyroscope). The charts' Cilium policies allow egress to exactly those ports in that namespace.
+- The vendored upstream charts in `platform-demo-helm/monitoring/` (Alloy, Mimir, Loki, Tempo, Pyroscope, Grafana) are not deployed by `envs/dev`. Re-point the exporters in `config.otlp.alloy` at the in-cluster Services of whichever charts are installed. A Grafana route in `platform-gateway` exists as a disabled entry.
+- The two non-OTLP workloads (`product-catalog-db`, `cart-redis`) have to be collected from pod logs, for example with `discovery.kubernetes` + `discovery.relabel` keeping pods whose label `app.kubernetes.io/component` is `database` or `cache` (the charts set it), feeding `loki.source.kubernetes` and setting `service_name` from the pod label `app.kubernetes.io/name`.
+- Nothing else is needed from the cluster: no scrape annotations, no `ServiceMonitor`. Behind the ALB, Grafana would sign in through Dex like Argo CD and Backstage.
+- Open questions: where the data lives (EBS volumes or object storage, cost on Spot nodes), and whether Hubble metrics and Kyverno policy-report metrics go into the same Mimir.

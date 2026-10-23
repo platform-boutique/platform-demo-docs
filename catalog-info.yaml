@@ -3,7 +3,7 @@ kind: Component
 metadata:
   name: platform-demo-docs
   title: platform-demo-docs
-  description: "Master reference of the platform, the current handoff, and the history of earlier sessions."
+  description: "Master reference of the platform: architecture, services, CI/CD, GitOps, security model and gotchas."
   annotations:
     github.com/project-slug: platform-boutique/platform-demo-docs
     backstage.io/source-location: url:https://github.com/platform-boutique/platform-demo-docs/tree/main/
